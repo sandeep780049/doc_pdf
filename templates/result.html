@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Conversion Result - PDF Converter</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>✅ Conversion Successful!</h1>
+        <p><strong>Converted File:</strong> {{ filename }}</p>
+
+        <a class="btn btn-red" href="{{ url_for('download_file', filename=filename) }}" download>Download</a>
+        <a class="btn" href="{{ url_for('index') }}">Convert Another</a>
+        <a class="btn" href="{{ url_for('history') }}">View History</a>
+    </div>
+</body>
+</html>
