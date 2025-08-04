@@ -4,20 +4,30 @@
     <meta charset="UTF-8">
     <title>PDF Converter</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="{{ url_for('static', filename='logo.jpeg') }}">
 </head>
 <body>
-    <header>
-        <img src="{{ url_for('static', filename='logo.jpeg') }}" alt="Logo" class="logo">
-        <h1>PDF Converter</h1>
-        <div class="menu">☰</div>
-    </header>
+    <nav>
+        <div class="logo">
+            <img src="{{ url_for('static', filename='logo.jpeg') }}" alt="Logo">
+            <span>PDF Converter</span>
+        </div>
+        <div class="menu">
+            <a href="/">Home</a>
+            <a href="/merge">Merge PDF</a>
+            <a href="/split">Split PDF</a>
+            <a href="/history">History</a>
+        </div>
+    </nav>
 
-    <main>
-        <form method="POST" action="/convert" enctype="multipart/form-data">
-            <input type="file" name="files" multiple required>
-            <button type="submit" class="convert-btn">Convert</button>
-        </form>
-    </main>
+    <div class="container">
+        <h1>Choose an Action</h1>
+        <div class="grid">
+            <a class="card" href="/convert">Convert to PDF</a>
+            <a class="card" href="/merge">Merge PDF</a>
+            <a class="card" href="/split">Split PDF</a>
+            <a class="card" href="/convert_to_word">Convert to Word</a>
+        </div>
+    </div>
 </body>
 </html>
