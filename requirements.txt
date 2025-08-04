@@ -1,5 +1,4 @@
 Flask
-Werkzeug
-PyMuPDF
+PyPDF2
+python-docx
 fpdf
-Pillow

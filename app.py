@@ -1,20 +1,16 @@
-from flask import Flask, render_template, request, send_file, session, redirect, url_for
 import os
+from flask import Flask, render_template, request, redirect, send_file, session, url_for
 from werkzeug.utils import secure_filename
-from fpdf import FPDF
-from PIL import Image
 from PyPDF2 import PdfMerger, PdfReader, PdfWriter
+from docx import Document
+from fpdf import FPDF
 import uuid
-import shutil
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'
+app.secret_key = "pdfconvertersecret"
 UPLOAD_FOLDER = 'uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-# Ensure upload folder exists
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 @app.route('/')
 def index():
@@ -22,82 +18,73 @@ def index():
 
 @app.route('/convert', methods=['POST'])
 def convert():
-    if 'files' not in request.files:
-        return "No file part"
-    
-    files = request.files.getlist('files')
-    operation = request.form.get('operation')
-    output_filename = str(uuid.uuid4()) + '.pdf'
-    output_path = os.path.join(UPLOAD_FOLDER, output_filename)
+    uploaded_file = request.files['file']
+    filename = secure_filename(uploaded_file.filename)
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    uploaded_file.save(file_path)
 
-    if operation == 'img2pdf':
-        images = []
-        for file in files:
-            img = Image.open(file.stream)
-            if img.mode == "RGBA":
-                img = img.convert("RGB")
-            img_path = os.path.join(UPLOAD_FOLDER, secure_filename(file.filename))
-            img.save(img_path)
-            images.append(Image.open(img_path).convert('RGB'))
-        if images:
-            images[0].save(output_path, save_all=True, append_images=images[1:])
-    
-    elif operation == 'pdf2img':
-        # Save uploaded PDF
-        file = files[0]
-        pdf_path = os.path.join(UPLOAD_FOLDER, secure_filename(file.filename))
-        file.save(pdf_path)
-        return "PDF to Image conversion not implemented in this version."
+    output_path = os.path.join(app.config['UPLOAD_FOLDER'], str(uuid.uuid4()) + '.pdf')
 
-    elif operation == 'merge':
-        merger = PdfMerger()
-        for file in files:
-            file_path = os.path.join(UPLOAD_FOLDER, secure_filename(file.filename))
-            file.save(file_path)
-            merger.append(file_path)
-        merger.write(output_path)
-        merger.close()
-    
-    elif operation == 'split':
-        file = files[0]
-        pdf_path = os.path.join(UPLOAD_FOLDER, secure_filename(file.filename))
-        file.save(pdf_path)
-        reader = PdfReader(pdf_path)
-        output_files = []
-        for i in range(len(reader.pages)):
-            writer = PdfWriter()
-            writer.add_page(reader.pages[i])
-            split_filename = f"{uuid.uuid4()}_page_{i+1}.pdf"
-            split_path = os.path.join(UPLOAD_FOLDER, split_filename)
-            with open(split_path, 'wb') as f:
-                writer.write(f)
-            output_files.append(split_filename)
-        session['history'] = session.get('history', []) + output_files
-        return render_template('result.html', files=output_files)
-
+    if filename.endswith('.docx'):
+        doc = Document(file_path)
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", size=12)
+        for para in doc.paragraphs:
+            pdf.multi_cell(0, 10, para.text)
+        pdf.output(output_path)
     else:
-        return "Unsupported operation."
+        return "Only .docx to .pdf supported for now."
 
-    session['history'] = session.get('history', []) + [output_filename]
-    return render_template('result.html', files=[output_filename])
+    session['last_file'] = output_path
+    return render_template('result.html', file_url=url_for('download_file'))
 
-@app.route('/download/<filename>')
-def download(filename):
-    path = os.path.join(UPLOAD_FOLDER, filename)
-    return send_file(path, as_attachment=True)
+@app.route('/download')
+def download_file():
+    return send_file(session.get('last_file'), as_attachment=True)
+
+@app.route('/merge', methods=['GET', 'POST'])
+def merge():
+    if request.method == 'POST':
+        files = request.files.getlist('files')
+        merger = PdfMerger()
+        paths = []
+
+        for file in files:
+            path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(file.filename))
+            file.save(path)
+            merger.append(path)
+            paths.append(path)
+
+        merged_path = os.path.join(app.config['UPLOAD_FOLDER'], 'merged_' + str(uuid.uuid4()) + '.pdf')
+        merger.write(merged_path)
+        merger.close()
+        session['last_file'] = merged_path
+        return render_template('result.html', file_url=url_for('download_file'))
+
+    return render_template('merge.html')
+
+@app.route('/split', methods=['GET', 'POST'])
+def split():
+    if request.method == 'POST':
+        file = request.files['file']
+        page_num = int(request.form['page'])
+        path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(file.filename))
+        file.save(path)
+
+        reader = PdfReader(path)
+        writer = PdfWriter()
+        writer.add_page(reader.pages[page_num - 1])
+
+        split_path = os.path.join(app.config['UPLOAD_FOLDER'], 'split_' + str(uuid.uuid4()) + '.pdf')
+        with open(split_path, 'wb') as f:
+            writer.write(f)
+
+        session['last_file'] = split_path
+        return render_template('result.html', file_url=url_for('download_file'))
+
+    return render_template('split.html')
 
 @app.route('/history')
 def history():
-    files = session.get('history', [])
-    return render_template('history.html', files=files)
-
-@app.route('/clear')
-def clear():
-    session.pop('history', None)
-    if os.path.exists(UPLOAD_FOLDER):
-        shutil.rmtree(UPLOAD_FOLDER)
-        os.makedirs(UPLOAD_FOLDER)
-    return redirect(url_for('index'))
-
-if __name__ == '__main__':
-    app.run(debug=True)
+    return render_template('history.html')

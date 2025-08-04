@@ -14,47 +14,14 @@ nav {
     align-items: center;
 }
 
-.logo {
-    display: flex;
-    align-items: center;
-}
-
-.logo img {
-    height: 30px;
-    margin-right: 10px;
-}
-
-.menu a {
-    color: white;
+nav .menu a {
+    margin-left: 15px;
     text-decoration: none;
-    margin-left: 20px;
+    color: white;
+    font-weight: bold;
 }
 
 .container {
+    padding: 40px;
     text-align: center;
-    margin-top: 50px;
-}
-
-.grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 20px;
-    max-width: 800px;
-    margin: 0 auto;
-    margin-top: 30px;
-}
-
-.card {
-    padding: 20px;
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    text-decoration: none;
-    color: #b30000;
-    font-weight: bold;
-    transition: 0.3s;
-}
-
-.card:hover {
-    background: #ffe6e6;
 }

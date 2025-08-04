@@ -1,26 +1,7 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Conversion History - PDF Converter</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
+<html>
+<head><title>History</title></head>
 <body>
-    <div class="container">
-        <h1>📜 Conversion History (Session Only)</h1>
-        {% if history %}
-            <ul>
-                {% for item in history %}
-                    <li>
-                        {{ item }} —
-                        <a class="btn" href="{{ url_for('download_file', filename=item) }}" download>Download</a>
-                    </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p>No conversions this session.</p>
-        {% endif %}
-        <a class="btn" href="{{ url_for('index') }}">⬅ Back to Home</a>
-    </div>
+    <h2>Conversion History (Coming Soon)</h2>
 </body>
 </html>
